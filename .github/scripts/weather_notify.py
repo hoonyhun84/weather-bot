@@ -4,7 +4,7 @@ from datetime import datetime
 
 API_KEY = os.environ["OPENWEATHER_API_KEY"]
 SLACK_URL = os.environ["SLACK_WEBHOOK_URL"]
-CITY = "Jeonju"  # 원하는 도시로 변경
+CITY = "Chuncheon"  # 원하는 도시로 변경
 
 def get_weather():
     url = f"https://api.openweathermap.org/data/2.5/weather"
