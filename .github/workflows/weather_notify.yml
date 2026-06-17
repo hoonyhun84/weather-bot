@@ -3,6 +3,8 @@ name: 날씨 Slack 알림
 on:
   schedule:
     - cron: '0 22 * * *'  # UTC 22:00 = KST 07:00 (한국 시간 고려)
+    - cron: '0 3 * * *'   # UTC 03:00 = KST 12:00
+    - cron: '0 9 * * *'   # UTC 09:00 = KST 18:00
   workflow_dispatch:       # 수동 실행 버튼도 활성화
 
 jobs:
