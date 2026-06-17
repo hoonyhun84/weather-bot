@@ -75,23 +75,30 @@ def build_current_section(data: dict) -> str:
 
 
 def build_hourly_section(forecast_data: dict, hours: int = 24) -> str:
-    """오늘 남은 시간 + 내일까지의 시간대별 예보 섹션"""
+    """시간대별 예보 섹션
+    
+    break 대신 리스트 컴프리헨션으로 필터링하여
+    경계값 문제 없이 안정적으로 동작
+    """
     now_kst = datetime.now(KST)
+    # 현재 3시간 슬롯 시작점 (예: 13:20 → 12:00 슬롯 포함)
+    slot_start = now_kst - timedelta(hours=3)
     cutoff_kst = now_kst + timedelta(hours=hours)
+
+    # 조건: 현재 슬롯 이후 ~ cutoff 이내 항목만 수집 (break 없이 전체 순회)
+    items = []
+    for item in forecast_data["list"]:
+        dt_utc = datetime.fromtimestamp(item["dt"], tz=timezone.utc)
+        dt_kst = dt_utc.astimezone(KST)
+        if slot_start < dt_kst <= cutoff_kst:
+            items.append((dt_kst, item))
+
+    if not items:
+        return "\n\n⚠️ 시간대별 예보 데이터를 불러오지 못했어요."
 
     lines = ["\n\n⏱ <b>시간대별 예보</b>", "───────────────"]
 
-    for item in forecast_data["list"]:
-        # UTC → KST 변환
-        dt_utc = datetime.fromtimestamp(item["dt"], tz=timezone.utc)
-        dt_kst = dt_utc.astimezone(KST)
-
-        if dt_kst <= now_kst:
-            continue
-        if dt_kst > cutoff_kst:
-            break
-
-        hour_str = dt_kst.strftime("%m/%d %H:%M")
+    for dt_kst, item in items:
         temp = item["main"]["temp"]
         desc = item["weather"][0]["description"]
         icon = item["weather"][0]["icon"]
@@ -109,6 +116,7 @@ def build_hourly_section(forecast_data: dict, hours: int = 24) -> str:
             precip = f" ❄{snow:.1f}mm"
 
         pop_str = f" ({pop}%)" if pop >= 20 else ""
+        hour_str = dt_kst.strftime("%m/%d %H:%M")
 
         lines.append(
             f"{emoji} <b>{hour_str}</b>  {temp:.1f}°C  {desc}{precip}{pop_str}"
@@ -142,4 +150,5 @@ if __name__ == "__main__":
     current_data = get_current_weather()
     forecast_data = get_forecast()
     message = build_message(current_data, forecast_data)
+    print(message)   # 로컬 테스트용 미리보기
     send_telegram(message)
